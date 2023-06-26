@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Введіть бали ЗНО</title>
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            color: #333;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        form {
+            width: 300px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        select, input[type="text"], input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f5f5f5;
+        }
+
+        /* Оновлені стилі для меню вводу предметів */
+        .subject-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .subject-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .subject-select {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <h1>Введіть бали ЗНО</h1>
+    <form method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>">
+        <label for="math">Математика:</label>
+        <input type="text" name="math" id="math" value="<?php echo isset($math) ? $math : ''; ?>" required pattern="1\d{2}|200" title="Введіть число від 100 до 200" maxlength="3">
+        <label for="ukrainian">Українська мова:</label>
+        <input type="text" name="ukrainian" id="ukrainian" value="<?php echo isset($ukrainian) ? $ukrainian : ''; ?>" required pattern="1\d{2}|200" title="Введіть число від 100 до 200" maxlength="3">
+
+        <label for="subject">Третій предмет:</label>
+        <select name="subject" id="subject" required>
+            <option value="">Оберіть предмет</option>
+            <option value="biology" <?php if (isset($subject) && $subject === 'biology') echo 'selected'; ?>>Біологія</option>
+            <option value="foreign_language" <?php if (isset($subject) && $subject === 'foreign_language') echo 'selected'; ?>>Іноземна мова</option>
+            <option value="ukrainian_history" <?php if (isset($subject) && $subject === 'ukrainian_history') echo 'selected'; ?>>Історія України</option>
+            <option value="physics" <?php if (isset($subject) && $subject === 'physics') echo 'selected'; ?>>Фізика</option>
+            <option value="chemistry" <?php if (isset($subject) && $subject === 'chemistry') echo 'selected'; ?>>Хімія</option>
+        </select>
+
+        <label for="score">Бал за третій предмет:</label>
+        <input type="text" name="score" id="score" value="<?php echo isset($score) ? $score : ''; ?>" pattern="1\d{2}|200" title="Введіть число від 100 до 200" maxlength="3">
+
+        <input type="submit" value="Підтвердити">
+    </form>
+
+    <?php
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $math = isset($_POST['math']) ? $_POST['math'] : '';
+        $ukrainian = isset($_POST['ukrainian']) ? $_POST['ukrainian'] : '';
+        $subject = isset($_POST['subject']) ? $_POST['subject'] : '';
+        $score = isset($_POST['score']) ? $_POST['score'] : '';
+
+        $mathWeight = 0.5;
+        $ukrainianWeight = 0.3;
+        $subjectWeight = 0.2;
+        $biologyWeight = 0.2;
+        $physicsWeight = 0.4;
+        $chemistryWeight = 0.2;
+        $foreignLanguageWeight = 0.3;
+
+        $mathScore = $math * $mathWeight;
+        $ukrainianScore = $ukrainian * $ukrainianWeight;
+
+        $subjectScore = 0;
+        if ($subject === 'biology') {
+            $subjectScore = $score * $biologyWeight;
+        } elseif ($subject === 'ukrainian_history') {
+            $subjectScore = $score * $subjectWeight;
+        } elseif ($subject === 'physics') {
+            $subjectScore = $score * $physicsWeight;
+        } elseif ($subject === 'chemistry') {
+            $subjectScore = $score * $chemistryWeight;
+        } elseif ($subject === 'foreign_language') {
+            $subjectScore = $score * $foreignLanguageWeight;
+        }
+
+        $totalScore = $mathScore + $ukrainianScore + $subjectScore;
+
+        // Перевірка на коректність балів
+        $valid = true;
+        if (!preg_match('/^(1\d{2}|200)$/', $math) || !preg_match('/^(1\d{2}|200)$/', $ukrainian) || !preg_match('/^(1\d{2}|200)$/', $score)) {
+            $valid = false;
+            echo '<div class="result"><p style="color: red;">Помилка: Введені бали мають бути числами від 100 до 200.</p></div>';
+        }
+
+        // Обчислення прохідних балів на спеціальності
+        $specialties = array(
+            'Автоматизація та компонентно-інтегровані технології' => array('контракт' => 140),
+            'Інженерія програмного забезпечення' => array('бюджет' => 179, 'контракт' => 150),
+            'Інформаційні системи та технології' => array('бюджет' => 171, 'контракт' => 148),
+            'Компютерна інженерія' => array('бюджет' => 172, 'контракт' => 143),
+            'Компютерні науки' => array('бюджет' => 174, 'контракт' => 140),
+            'Математика' => array('бюджет' => 154),
+            'Прикладна математика' => array('бюджет' => 177, 'контракт' => 145),
+            'Середня освіта (ФМЦТ)' => array('бюджет' => 159),
+            'Середня освіта (ФФ)' => array('контракт' => 140),
+            'Системний аналіз' => array('бюджет' => 179, 'контракт' => 149)
+        );
+
+        $passingScores = array();
+
+        foreach ($specialties as $specialty => $scores) {
+            $passingScore = 0;
+            if (isset($scores['бюджет'])) {
+                $passingScore = $scores['бюджет'];
+            } elseif (isset($scores['контракт'])) {
+                $passingScore = $scores['контракт'];
+            }
+            $passingScores[$specialty] = $passingScore;
+        }
+
+        // Виведення результатів
+        echo '<div class="result">';
+        if ($valid) {
+            echo '<h2>Результати</h2>';
+            echo '<p><strong>Загальний бал:</strong> ' . $totalScore . '</p>';
+            echo '<h3>Прохідні бали на спеціальності:</h3>';
+            echo '<ul>';
+            $passedBudget = [];
+            $passedContract = [];
+            $notPassed = [];
+            foreach ($passingScores as $specialty => $passingScore) {
+                if ($totalScore >= $passingScore) {
+                    if (isset($specialties[$specialty]['бюджет']) && !isset($specialties[$specialty]['контракт'])) {
+                        $passedBudget[] = $specialty;
+                    } elseif (isset($specialties[$specialty]['контракт'])) {
+                        if (isset($specialties[$specialty]['бюджет']) && $totalScore >= $specialties[$specialty]['бюджет']) {
+                            $passedBudget[] = $specialty;
+                        } else {
+                            $passedContract[] = $specialty;
+                        }
+                    }
+                } else {
+                    $notPassed[] = $specialty;
+                }
+            }            
+            sort($passedBudget);
+            sort($passedContract);
+            sort($notPassed);
+
+            echo '<li><strong>Бюджетні:</strong></li>';
+            echo '<ul>';
+            foreach ($passedBudget as $specialty) {
+                echo '<li>' . $specialty . '</li>';
+            }
+            echo '</ul>';
+
+            echo '<li><strong>Контрактні:</strong></li>';
+            echo '<ul>';
+            foreach ($passedContract as $specialty) {
+                echo '<li>' . $specialty . '</li>';
+            }
+            echo '</ul>';
+
+            echo '<ul>';
+            foreach ($notPassed as $specialty) {
+                echo '<li>' . $specialty . '</li>';
+            }
+            echo '</ul>';
+
+            echo '</ul>';
+        }
+        echo '</div>';
+    }
+    ?>
+</body>
+</html>
