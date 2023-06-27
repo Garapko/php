@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Введіть бали ЗНО</title>
+    <title>Введіть бали НМТ</title>
     <style>
         body {
             background-color: #f5f5f5;
@@ -52,6 +52,8 @@
             background-color: #f5f5f5;
         }
 
+        
+
         /* Оновлені стилі для меню вводу предметів */
         .subject-container {
             display: flex;
@@ -73,7 +75,7 @@
     </style>
 </head>
 <body>
-    <h1>Введіть бали ЗНО</h1>
+    <h1>Введіть бали НМТ</h1>
     <form method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>">
         <label for="math">Математика:</label>
         <input type="text" name="math" id="math" value="<?php echo isset($math) ? $math : ''; ?>" required pattern="1\d{2}|200" title="Введіть число від 100 до 200" maxlength="3">
@@ -111,8 +113,34 @@
         $chemistryWeight = 0.2;
         $foreignLanguageWeight = 0.3;
 
+        $mathWeightSecEd = 0.5;
+        $ukrainianWeightSecEd = 0.3;
+        $subjectWeightSecEd = 0.2;
+        $biologyWeightSecEd = 0.3;
+        $physicsWeightSecEd = 0.4;
+        $chemistryWeightSecEd = 0.3;
+        $foreignLanguageWeightSecEd = 0.3;
+
+        $mathWeightAutoComp = 0.5;
+        $ukrainianWeightAutoComp = 0.3;
+        $subjectWeightAutoComp = 0.2;
+        $biologyWeightAutoComp = 0.2;
+        $physicsWeightAutoComp = 0.5;
+        $chemistryWeightAutoComp = 0.2;
+        $foreignLanguageWeightAutoComp = 0.25;
+
+        $mathWeightMath = 0.5;
+        $ukrainianWeightMath = 0.3;
+        $subjectWeightMath = 0.2;
+        $biologyWeightMath = 0.2;
+        $physicsWeightMath = 0.4;
+        $chemistryWeightMath = 0.2;
+        $foreignLanguageWeightMath = 0.2;
+
+
         $mathScore = $math * $mathWeight;
         $ukrainianScore = $ukrainian * $ukrainianWeight;
+
 
         $subjectScore = 0;
         if ($subject === 'biology') {
@@ -126,9 +154,53 @@
         } elseif ($subject === 'foreign_language') {
             $subjectScore = $score * $foreignLanguageWeight;
         }
-
         $totalScore = $mathScore + $ukrainianScore + $subjectScore;
 
+
+        $subjectScoreSecEd = 0;
+        if ($subject === 'biology') {
+            $subjectScoreSecEd = $score * $biologyWeightSecEd;
+        } elseif ($subject === 'ukrainian_history') {
+            $subjectScoreSecEd = $score * $subjectWeightSecEd;
+        } elseif ($subject === 'physics') {
+            $subjectScoreSecEd = $score * $physicsWeightSecEd;
+        } elseif ($subject === 'chemistry') {
+            $subjectScoreSecEd = $score * $chemistryWeightSecEd;
+        } elseif ($subject === 'foreign_language') {
+            $subjectScoreSecEd = $score * $foreignLanguageWeightSecEd;
+        }
+        $totalScoreSecEd = $mathScore + $ukrainianScore + $subjectScoreSecEd;
+
+
+        $subjectScoreAutoComp = 0;
+        if ($subject === 'biology') {
+            $subjectScoreAutoComp = $score * $biologyWeightAutoComp;
+        } elseif ($subject === 'ukrainian_history') {
+            $subjectScoreAutoComp = $score * $subjectWeightAutoComp;
+        } elseif ($subject === 'physics') {
+            $subjectScoreAutoComp = $score * $physicsWeightAutoComp;
+        } elseif ($subject === 'chemistry') {
+            $subjectScoreAutoComp = $score * $chemistryWeightAutoComp;
+        } elseif ($subject === 'foreign_language') {
+            $subjectScoreAutoComp = $score * $foreignLanguageWeightAutoComp;
+        }
+        $totalScoreAutoComp = $mathScore + $ukrainianScore + $subjectScoreAutoComp;
+ 
+
+        $subjectScoreMath = 0;
+        if ($subject === 'biology') {
+            $subjectScoreMath = $score * $biologyWeightMath;
+        } elseif ($subject === 'ukrainian_history') {
+            $subjectScoreMath = $score * $subjectWeightMath;
+        } elseif ($subject === 'physics') {
+            $subjectScoreMath = $score * $physicsWeightMath;
+        } elseif ($subject === 'chemistry') {
+            $subjectScoreMath = $score * $chemistryWeightMath;
+        } elseif ($subject === 'foreign_language') {
+            $subjectScoreMath = $score * $foreignLanguageWeightMath;
+        }
+        $totalScoreMath =  $mathScore + $ukrainianScore + $subjectScoreMath;
+ 
         // Перевірка на коректність балів
         $valid = true;
         if (!preg_match('/^(1\d{2}|200)$/', $math) || !preg_match('/^(1\d{2}|200)$/', $ukrainian) || !preg_match('/^(1\d{2}|200)$/', $score)) {
@@ -139,15 +211,15 @@
         // Обчислення прохідних балів на спеціальності
         $specialties = array(
             'Автоматизація та компонентно-інтегровані технології' => array('контракт' => 140),
-            'Інженерія програмного забезпечення' => array('бюджет' => 179, 'контракт' => 150),
-            'Інформаційні системи та технології' => array('бюджет' => 171, 'контракт' => 148),
-            'Компютерна інженерія' => array('бюджет' => 172, 'контракт' => 143),
-            'Компютерні науки' => array('бюджет' => 174, 'контракт' => 140),
+            'Інженерія програмного забезпечення' => array('бюджет' => 178, 'контракт' => 150),
+            'Інформаційні системи та технології' => array('бюджет' => 168, 'контракт' => 148),
+            'Компютерна інженерія' => array('бюджет' => 165, 'контракт' => 143),
+            'Компютерні науки' => array('бюджет' => 172, 'контракт' => 140),
             'Математика' => array('бюджет' => 154),
-            'Прикладна математика' => array('бюджет' => 177, 'контракт' => 145),
-            'Середня освіта (ФМЦТ)' => array('бюджет' => 159),
-            'Середня освіта (ФФ)' => array('контракт' => 140),
-            'Системний аналіз' => array('бюджет' => 179, 'контракт' => 149)
+            'Прикладна математика' => array('бюджет' => 165, 'контракт' => 145),
+            'Середня освіта (ФМЦТ)' => array('бюджет' => 150),
+            'Середня освіта (ФФ)' => array('бюджет' => 142, 'контракт' => 142),
+            'Системний аналіз' => array('бюджет' => 165, 'контракт' => 149)
         );
 
         $passingScores = array();
@@ -160,6 +232,10 @@
                 $passingScore = $scores['контракт'];
             }
             $passingScores[$specialty] = $passingScore;
+        }
+
+        if($totalScore > 200){
+            $totalScore = 200;
         }
 
         // Виведення результатів
