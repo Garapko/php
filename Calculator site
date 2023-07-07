@@ -1,0 +1,357 @@
+<?php
+/**
+ * Theme functions and definitions
+ *
+ * @package HelloElementorChild
+ */
+
+/**
+ * Load child theme css and optional scripts
+ *
+ * @return void
+ */
+function hello_elementor_child_enqueue_scripts() {
+	wp_enqueue_style(
+		'hello-elementor-child-style',
+		get_stylesheet_directory_uri() . '/style.css',
+		[
+			'hello-elementor-theme-style',
+		],
+		'1.0.0'
+	);
+}
+add_action( 'wp_enqueue_scripts', 'hello_elementor_child_enqueue_scripts', 20 );
+
+// Функція для обробки AJAX-запиту з обчисленням результатів
+function zno_calculator_ajax_handler() {
+    $response = array();
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $math = isset($_POST['math']) ? $_POST['math'] : '';
+        $ukrainian = isset($_POST['ukrainian']) ? $_POST['ukrainian'] : '';
+        $subject = isset($_POST['subject']) ? $_POST['subject'] : '';
+        $score = isset($_POST['score']) ? $_POST['score'] : '';
+
+        $mathWeight = 0.5;
+        $ukrainianWeight = 0.3;
+        $subjectWeight = 0.2;
+        $biologyWeight = 0.2;
+        $physicsWeight = 0.4;
+        $chemistryWeight = 0.2;
+        $foreignLanguageWeight = 0.3;
+
+        $mathScore = $math * $mathWeight;
+        $ukrainianScore = $ukrainian * $ukrainianWeight;
+
+        $subjectScore = 0;
+        if ($subject === 'biology') {
+            $subjectScore = $score * $biologyWeight;
+        } elseif ($subject === 'ukrainian_history') {
+            $subjectScore = $score * $subjectWeight;
+        } elseif ($subject === 'physics') {
+            $subjectScore = $score * $physicsWeight;
+        } elseif ($subject === 'chemistry') {
+            $subjectScore = $score * $chemistryWeight;
+        } elseif ($subject === 'foreign_language') {
+            $subjectScore = $score * $foreignLanguageWeight;
+        }
+
+        $totalScore = $mathScore + $ukrainianScore + $subjectScore;
+
+        // Перевірка на коректність балів
+        $valid = true;
+        if (!preg_match('/^(1\d{2}|200)$/', $math) || !preg_match('/^(1\d{2}|200)$/', $ukrainian) || !preg_match('/^(1\d{2}|200)$/', $score)) {
+            $valid = false;
+            $response['error'] = 'Помилка: Введені бали мають бути числами від 100 до 200.';
+        }
+
+        // Обчислення прохідних балів на спеціальності
+        $specialties = array(
+            'Автоматизація та компонентно-інтегровані технології' => array('контракт' => 140),
+            'Інженерія програмного забезпечення' => array('бюджет' => 178, 'контракт' => 150),
+            'Інформаційні системи та технології' => array('бюджет' => 168, 'контракт' => 148),
+            'Компютерна інженерія' => array('бюджет' => 165, 'контракт' => 143),
+            'Компютерні науки' => array('бюджет' => 172, 'контракт' => 140),
+            'Математика' => array('бюджет' => 154),
+            'Прикладна математика' => array('бюджет' => 165, 'контракт' => 145),
+            'Середня освіта (ФМЦТ)' => array('бюджет' => 150),
+            'Середня освіта (ФФ)' => array('бюджет' => 142, 'контракт' => 142),
+            'Системний аналіз' => array('бюджет' => 165, 'контракт' => 149)
+        );
+
+        $passingScores = array();
+
+        foreach ($specialties as $specialty => $scores) {
+            $passingScore = 0;
+            if (isset($scores['бюджет'])) {
+                $passingScore = $scores['бюджет'];
+            } elseif (isset($scores['контракт'])) {
+                $passingScore = $scores['контракт'];
+            }
+            $passingScores[$specialty] = $passingScore;
+        }
+
+        $passedBudget = [];
+        $passedContract = [];
+        $notPassed = [];
+
+        foreach ($passingScores as $specialty => $passingScore) {
+            if ($totalScore >= $passingScore) {
+                if (isset($specialties[$specialty]['бюджет']) && !isset($specialties[$specialty]['контракт'])) {
+                    $passedBudget[] = $specialty;
+                } elseif (isset($specialties[$specialty]['контракт'])) {
+                    if (isset($specialties[$specialty]['бюджет']) && $totalScore >= $specialties[$specialty]['бюджет']) {
+                        $passedBudget[] = $specialty;
+                        $passedContract[] = $specialty;
+                    } else {
+                        $passedContract[] = $specialty;
+                    }
+                }
+            } else {
+                $notPassed[] = $specialty;
+            }
+        }
+
+        $response['valid'] = $valid;
+        $response['totalScore'] = $totalScore;
+        $response['passedBudget'] = $passedBudget;
+        $response['passedContract'] = $passedContract;
+        $response['notPassed'] = $notPassed;
+    }
+
+    wp_send_json($response);
+}
+add_action('wp_ajax_zno_calculator_ajax', 'zno_calculator_ajax_handler');
+add_action('wp_ajax_nopriv_zno_calculator_ajax', 'zno_calculator_ajax_handler');
+
+// Функція для підключення JavaScript-скрипту та передачі змінних у нього
+function zno_calculator_enqueue_scripts() {
+    wp_enqueue_script('zno-calculator-script', get_stylesheet_directory_uri() . '/js/zno-calculator.js', array('jquery'), '1.0', true);
+
+    // Передача URL для AJAX-запитів в JavaScript
+    wp_localize_script('zno-calculator-script', 'zno_calculator_ajax', array(
+        'ajax_url' => admin_url('admin-ajax.php')
+    ));
+}
+add_action('wp_enqueue_scripts', 'zno_calculator_enqueue_scripts');
+
+// Оновлений шорткод для форми
+function zno_calculator_shortcode_form() {
+    ob_start();
+    ?>
+    <form id="zno-calculator-form" class="zno-calculator-form">
+        <div class="subject-container">
+            <label for="math" class="subject-label">Бали з математики:</label>
+            <input type="number" name="math" id="math" class="subject-input" required>
+        </div>
+
+        <div class="subject-container">
+            <label for="ukrainian" class="subject-label">Бали з української мови:</label>
+            <input type="number" name="ukrainian" id="ukrainian" class="subject-input" required>
+        </div>
+
+        <div class="subject-container">
+            <label for="subject" class="subject-label">Предмет:</label>
+            <select name="subject" id="subject" class="subject-select" required>
+                <option value="biology">Біологія</option>
+                <option value="ukrainian_history">Історія України</option>
+                <option value="physics">Фізика</option>
+                <option value="chemistry">Хімія</option>
+                <option value="foreign_language">Іноземна мова</option>
+            </select>
+        </div>
+
+        <div class="subject-container">
+            <label for="score" class="subject-label">Бали за предмет:</label>
+            <input type="number" name="score" id="score" class="subject-input" required>
+        </div>
+
+        <input type="submit" value="Обчислити" class="zno-calculator-submit">
+    </form>
+
+    <div id="zno-calculator-result" class="result"></div>
+
+	<style>
+    .zno-calculator-form {
+        width: 50%;
+        margin: 0 auto;
+        background-color: #fff;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+
+    .zno-calculator-label {
+        display: block;
+        margin-bottom: 10px;
+        margin-top: 10px;
+    }
+
+    .zno-calculator-select,
+    .zno-calculator-input,
+    .zno-calculator-submit {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .zno-calculator-submit {
+        margin-top: 30px;
+        background-color: #4CAF50;
+        color: white;
+        cursor: pointer;
+    }
+
+    .result {
+        margin-top: 20px;
+        padding: 10px;
+
+    }
+
+    .my-border {
+  border: 2px solid #000;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+
+
+    /* Оновлені стилі для меню вводу предметів */
+    .zno-calculator-form .subject-container {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 10px;
+    }
+
+    .zno-calculator-form .subject-label {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .zno-calculator-form .subject-select {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    .result h2 {
+        margin-top: 0;
+    }
+
+    .result p {
+        margin-bottom: 10px;
+    }
+
+    .result h3 {
+        margin-top: 20px;
+    }
+
+    .result h4 {
+        margin-top: 30px;
+    }
+
+    .result ul {
+        margin-top: 5px;
+        list-style-type: none;
+        padding-left: 0;
+    }
+
+    
+
+    .result li {
+        margin-bottom: 5px;
+    }
+
+    .result_list{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+        .result_list li {
+
+        border: 1px solid black;
+        padding: 6px 10px;
+        border-radius: 8px;
+        } 
+</style>
+
+    <script>
+        jQuery(document).ready(function($) {
+            $('#zno-calculator-form').submit(function(e) {
+                e.preventDefault();
+
+                var math = $('#math').val();
+                var ukrainian = $('#ukrainian').val();
+                var subject = $('#subject').val();
+                var score = $('#score').val();
+
+                $.ajax({
+                    url: zno_calculator_ajax.ajax_url,
+                    type: 'post',
+                    data: {
+                        action: 'zno_calculator_ajax',
+                        math: math,
+                        ukrainian: ukrainian,
+                        subject: subject,
+                        score: score
+                    },
+                    success: function(response) {
+                        if (response.valid) {
+                            var resultHtml =  '<h2>За результатами обчислень:</h2><h4>(*на основі даних встпної компанії 2022 року)</h4>';
+                            resultHtml += '<h3>Ви можете претендувати на бюджетне місце:</h3>';
+
+
+                            if (response.passedBudget.length > 0) {
+                                resultHtml += '<ul class="result_list">';
+                                $.each(response.passedBudget, function(index, value) {
+                                    resultHtml += '<li>' + value + '</li>';
+                                });
+                                resultHtml += '</ul>';
+                            } else {
+                                resultHtml += '<p>Немає спеціальностей на бюджеті.</p>';
+                            }
+
+
+                            resultHtml += '<h3>Ви можете претендувати на контракт:</h3>';
+
+
+                            if (response.passedContract.length > 0) {
+                                resultHtml += '<ul>';
+                                $.each(response.passedContract, function(index, value) {
+                                    resultHtml += '<li>' + value + '</li>';
+                                });
+                                resultHtml += '</ul>';
+                            } else {
+                                resultHtml += '<p>Немає спеціальностей на контракті.</p>';
+                            }
+
+
+                            if (response.notPassed.length > 0) {
+                                resultHtml += '<ul>';
+                                $.each(response.notPassed, function(index, value) {
+                                    resultHtml += '<li>' + value + '</li>';
+                                });
+                                resultHtml += '</ul>';
+                            } 
+
+                            $('#zno-calculator-result').html(resultHtml);
+                        } else {
+                            $('#zno-calculator-result').html('<p class="error">' + response.error + '</p>');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+    <?php
+    return ob_get_clean();
+}
+add_shortcode('zno_calculator_form', 'zno_calculator_shortcode_form');
+
