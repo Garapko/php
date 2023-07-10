@@ -25,98 +25,133 @@ add_action( 'wp_enqueue_scripts', 'hello_elementor_child_enqueue_scripts', 20 );
 // Функція для обробки AJAX-запиту з обчисленням результатів
 function zno_calculator_ajax_handler() {
     $response = array();
+    $smallerFontSize = "10px";
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $math = isset($_POST['math']) ? $_POST['math'] : '';
-        $ukrainian = isset($_POST['ukrainian']) ? $_POST['ukrainian'] : '';
+        $mathScore = isset($_POST['math']) ? $_POST['math'] : '';
+        $ukrainianScore = isset($_POST['ukrainian']) ? $_POST['ukrainian'] : '';
         $subject = isset($_POST['subject']) ? $_POST['subject'] : '';
         $score = isset($_POST['score']) ? $_POST['score'] : '';
 
-        $mathWeight = 0.5;
-        $ukrainianWeight = 0.3;
-        $subjectWeight = 0.2;
-        $biologyWeight = 0.2;
-        $physicsWeight = 0.4;
-        $chemistryWeight = 0.2;
-        $foreignLanguageWeight = 0.3;
-
-        $mathScore = $math * $mathWeight;
-        $ukrainianScore = $ukrainian * $ukrainianWeight;
-
-        $subjectScore = 0;
-        if ($subject === 'biology') {
-            $subjectScore = $score * $biologyWeight;
-        } elseif ($subject === 'ukrainian_history') {
-            $subjectScore = $score * $subjectWeight;
-        } elseif ($subject === 'physics') {
-            $subjectScore = $score * $physicsWeight;
-        } elseif ($subject === 'chemistry') {
-            $subjectScore = $score * $chemistryWeight;
-        } elseif ($subject === 'foreign_language') {
-            $subjectScore = $score * $foreignLanguageWeight;
-        }
-
-        $totalScore = $mathScore + $ukrainianScore + $subjectScore;
-
+        
+ 
         // Перевірка на коректність балів
         $valid = true;
-        if (!preg_match('/^(1\d{2}|200)$/', $math) || !preg_match('/^(1\d{2}|200)$/', $ukrainian) || !preg_match('/^(1\d{2}|200)$/', $score)) {
+        if (!preg_match('/^(1\d{2}|200)$/', $mathScore) || !preg_match('/^(1\d{2}|200)$/', $ukrainianScore) || !preg_match('/^(1\d{2}|200)$/', $score)) {
             $valid = false;
-            $response['error'] = 'Помилка: Введені бали мають бути числами від 100 до 200.';
+            echo '<div class="result"><p style="color: red;">Помилка: Введені бали мають бути числами від 100 до 200.</p></div>';
         }
 
-        // Обчислення прохідних балів на спеціальності
-        $specialties = array(
-            'Автоматизація та компонентно-інтегровані технології' => array('контракт' => 140),
-            'Інженерія програмного забезпечення' => array('бюджет' => 178, 'контракт' => 150),
-            'Інформаційні системи та технології' => array('бюджет' => 168, 'контракт' => 148),
-            'Компютерна інженерія' => array('бюджет' => 165, 'контракт' => 143),
-            'Компютерні науки' => array('бюджет' => 172, 'контракт' => 140),
-            'Математика' => array('бюджет' => 154),
-            'Прикладна математика' => array('бюджет' => 165, 'контракт' => 145),
-            'Середня освіта (ФМЦТ)' => array('бюджет' => 150),
-            'Середня освіта (ФФ)' => array('бюджет' => 142, 'контракт' => 142),
-            'Системний аналіз' => array('бюджет' => 165, 'контракт' => 149)
+        $baseWeights = array(
+            'math' => 0.5,
+            'ukrainian' => 0.3,
+            'ukrainian_history' => 0.2,
+            'biology' => 0.2,
+            'physics' => 0.4,
+            'chemistry' => 0.2,
+            'foreign_language' => 0.3
         );
 
-        $passingScores = array();
 
-        foreach ($specialties as $specialty => $scores) {
-            $passingScore = 0;
-            if (isset($scores['бюджет'])) {
-                $passingScore = $scores['бюджет'];
-            } elseif (isset($scores['контракт'])) {
-                $passingScore = $scores['контракт'];
-            }
-            $passingScores[$specialty] = $passingScore;
-        }
+        $specialties = array(
+            '151 Автоматизація та компонентно-інтегровані технології' => array(
+                'passing_score' => 201,
+                'weight' => array(
+                    'physics' => 0.5,
+                    'foreignLanguage' => 0.25
+                )
+            ),
+            '121 Інженерія програмного забезпечення' => array(
+                'passing_score' => 178,
+                'weight' => array(
+                    'chemistry' => 0.2,
+                    'foreignLanguage' => 0.3
+                )
+            ),
+            '126 Інформаційні системи та технології' => array(
+                'passing_score' => 168,
+                'weight' => array(   
+                )
+            ),
+            '123 Компютерна інженерія' => array(
+                'passing_score' => 165,
+                'weight' => array(
+                )
+            ),
+            '122 Компютерні науки' => array(
+                'passing_score' => 172,
+                'weight' => array(
+                )
+            ),
+            '113 Прикладна математика' => array(
+                'passing_score' => 165, 
+                'weight' => array(
+                )
+            ),
+            '111 Математика' => array(
+                'passing_score' => 134,
+                'weight' => array(
+                )
+            ),
+            '014.04 Середня освіта (ФМЦТ)' => array(
+                'passing_score' => 150,
+                'weight' => array(
+                    'chemistry' => 0.3,
+                    'biology' => 0.3,
+                    'physics' => 0.5
+                )
+            ),
+            '014.08 Середня освіта (ФФ)' => array(
+                'passing_score' => 142,
+                'weight' => array(
+                    'chemistry' => 0.3,
+                    'biology' => 0.3,
+                    'physics' => 0.5
+                )
+            ),
+            '124 Системний аналіз' => array(
+                'passing_score' => 172,
+                'weight' => array(
+                )
+            )
+        );
+
 
         $passedBudget = [];
         $passedContract = [];
-        $notPassed = [];
 
-        foreach ($passingScores as $specialty => $passingScore) {
-            if ($totalScore >= $passingScore) {
-                if (isset($specialties[$specialty]['бюджет']) && !isset($specialties[$specialty]['контракт'])) {
-                    $passedBudget[] = $specialty;
-                } elseif (isset($specialties[$specialty]['контракт'])) {
-                    if (isset($specialties[$specialty]['бюджет']) && $totalScore >= $specialties[$specialty]['бюджет']) {
-                        $passedBudget[] = $specialty;
-                        $passedContract[] = $specialty;
-                    } else {
-                        $passedContract[] = $specialty;
-                    }
-                }
-            } else {
-                $notPassed[] = $specialty;
+        foreach ($specialties as $specialty => $info) {
+            $totalScore = 0;
+        
+            $weights = $info['weight'];
+            $passingScore = $info['passing_score'];
+        
+            $mathWeight = isset($weights['math']) ? $weights['math'] : $baseWeights['math'];
+            $totalScore += $mathWeight * $mathScore;
+        
+            $ukrainianWeight = isset($weights['ukrainian']) ? $weights['ukrainian'] : $baseWeights['ukrainian'];
+            $totalScore += $ukrainianWeight * $ukrainianScore;
+        
+            $subjectWeight = isset($weights[$subject]) ? $weights[$subject] : $baseWeights[$subject];
+            $totalScore += $score * $subjectWeight;
+        
+            if ($totalScore > 200) {
+                $totalScore = 200;
             }
+            if ($totalScore > $passingScore) {
+                $passedBudget[] = $specialty;
+                $passedContract[] = $specialty;
+            } 
+            else {
+                $passedContract[] = $specialty;
+            }
+            
         }
-
+        
         $response['valid'] = $valid;
         $response['totalScore'] = $totalScore;
         $response['passedBudget'] = $passedBudget;
         $response['passedContract'] = $passedContract;
-        $response['notPassed'] = $notPassed;
     }
 
     wp_send_json($response);
@@ -262,24 +297,29 @@ function zno_calculator_shortcode_form() {
         padding-left: 0;
     }
 
-    
+    h5 {
+        font-size: 0.5rem;
+    }
 
     .result li {
         margin-bottom: 5px;
     }
 
-    .result_list{
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
+    .result_list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
 
-        .result_list li {
-
-        border: 1px solid black;
-        padding: 6px 10px;
-        border-radius: 8px;
-        } 
+.result_list li {
+    border: 1px solid black;
+    border-radius: 8px;
+    flex-basis: 1700px;
+    padding: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 </style>
 
     <script>
@@ -304,7 +344,7 @@ function zno_calculator_shortcode_form() {
                     },
                     success: function(response) {
                         if (response.valid) {
-                            var resultHtml =  '<h2>За результатами обчислень:</h2><h4>(*на основі даних встпної компанії 2022 року)</h4>';
+                            var resultHtml =  '<h2>За результатами обчислень:<h5>(*на основі даних встпної компанії 2022 року)</h5></h2>';
                             resultHtml += '<h3>Ви можете претендувати на бюджетне місце:</h3>';
 
 
@@ -323,7 +363,7 @@ function zno_calculator_shortcode_form() {
 
 
                             if (response.passedContract.length > 0) {
-                                resultHtml += '<ul>';
+                                resultHtml += '<ul class="result_list">';
                                 $.each(response.passedContract, function(index, value) {
                                     resultHtml += '<li>' + value + '</li>';
                                 });
@@ -331,16 +371,6 @@ function zno_calculator_shortcode_form() {
                             } else {
                                 resultHtml += '<p>Немає спеціальностей на контракті.</p>';
                             }
-
-
-                            if (response.notPassed.length > 0) {
-                                resultHtml += '<ul>';
-                                $.each(response.notPassed, function(index, value) {
-                                    resultHtml += '<li>' + value + '</li>';
-                                });
-                                resultHtml += '</ul>';
-                            } 
-
                             $('#zno-calculator-result').html(resultHtml);
                         } else {
                             $('#zno-calculator-result').html('<p class="error">' + response.error + '</p>');
