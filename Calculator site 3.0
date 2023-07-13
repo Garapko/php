@@ -35,12 +35,23 @@ function zno_calculator_ajax_handler() {
 
         
  
-        // Перевірка на коректність балів
         $valid = true;
-        if (!preg_match('/^(1\d{2}|200)$/', $mathScore) || !preg_match('/^(1\d{2}|200)$/', $ukrainianScore) || !preg_match('/^(1\d{2}|200)$/', $score)) {
+
+        $valid = true;
+
+        if ($mathScore < 100 || $mathScore > 200 || $ukrainianScore < 100 || $ukrainianScore > 200 || $score < 100 || $score > 200) {
             $valid = false;
+        }
+        
+        if (!$valid) {
             echo '<div class="result"><p style="color: red;">Помилка: Введені бали мають бути числами від 100 до 200.</p></div>';
         }
+
+
+        $tabCount = 4; // Кількість табуляцій
+        $spacesPerTab = 4; // Кількість пробілів на одну табуляцію
+        $spaces = str_repeat(' ', $tabCount * $spacesPerTab);
+
 
         $baseWeights = array(
             'math' => 0.5,
@@ -54,46 +65,49 @@ function zno_calculator_ajax_handler() {
 
 
         $specialties = array(
-            '151 Автоматизація та компонентно-інтегровані технології' => array(
-                'passing_score' => 201,
-                'weight' => array(
-                    'physics' => 0.5,
-                    'foreignLanguage' => 0.25
-                )
+            '111. Математика(Комп’ютерна та бізнес-математика)' => array(
+                'passing_score' => 134,
+                'weight' => array()
             ),
-            '121 Інженерія програмного забезпечення' => array(
+            '113 Прикладна математика(Системи штучного інтелекту)' => array(
+                'passing_score' => 165,
+                'weight' => array()
+            ),
+            '121 Інженерія програмного забезпечення(Інженерія програмного забезпечення)' => array(
                 'passing_score' => 178,
                 'weight' => array(
                     'chemistry' => 0.2,
                     'foreignLanguage' => 0.3
                 )
             ),
-            '126 Інформаційні системи та технології' => array(
-                'passing_score' => 168,
-                'weight' => array(   
-                )
-            ),
-            '123 Компютерна інженерія' => array(
-                'passing_score' => 165,
-                'weight' => array(
-                )
-            ),
-            '122 Компютерні науки' => array(
+            '122 Комп’ютерні науки(Комп’ютерні науки)' => array(
                 'passing_score' => 172,
+                'weight' => array()
+            ),
+            '123 Комп’ютерна інженерія(Комп’ютерні системи та мережі)' => array(
+                'passing_score' => 165,
+                'weight' => array()
+            ),
+            '124 Системний аналіз(Системний аналіз)' => array(
+                'passing_score' => 172,
+                'weight' => array()
+            ),
+            '125 Кібербезпека(Безпека інформаційних і комунікаційних систем)' => array(
+                'passing_score' => 165,
+                'weight' => array()
+            ),
+            '126 Інформаційні системи та технології(Інформаційні системи та технології)' => array(
+                'passing_score' => 168,
+                'weight' => array()
+            ),
+            '174 Автоматизація та компонентно-інтегровані технології(Автоматизація та комп’ютерно-інтегровані технології)' => array(
+                'passing_score' => 201,
                 'weight' => array(
+                    'physics' => 0.5,
+                    'foreignLanguage' => 0.25
                 )
             ),
-            '113 Прикладна математика' => array(
-                'passing_score' => 165, 
-                'weight' => array(
-                )
-            ),
-            '111 Математика' => array(
-                'passing_score' => 134,
-                'weight' => array(
-                )
-            ),
-            '014.04 Середня освіта (ФМЦТ)' => array(
+            '014.04 Середня освіта. Математика(Математика. Інформатика)' => array(
                 'passing_score' => 150,
                 'weight' => array(
                     'chemistry' => 0.3,
@@ -101,17 +115,12 @@ function zno_calculator_ajax_handler() {
                     'physics' => 0.5
                 )
             ),
-            '014.08 Середня освіта (ФФ)' => array(
+            '014.08 Середня освіта. Фізика(Фізика. Інформатика)' => array(
                 'passing_score' => 142,
                 'weight' => array(
                     'chemistry' => 0.3,
                     'biology' => 0.3,
                     'physics' => 0.5
-                )
-            ),
-            '124 Системний аналіз' => array(
-                'passing_score' => 172,
-                'weight' => array(
                 )
             )
         );
@@ -119,31 +128,39 @@ function zno_calculator_ajax_handler() {
 
         $passedBudget = [];
         $passedContract = [];
+        $passedScore =[];
 
         foreach ($specialties as $specialty => $info) {
             $totalScore = 0;
+            $totalWeight = 0;
         
             $weights = $info['weight'];
             $passingScore = $info['passing_score'];
         
             $mathWeight = isset($weights['math']) ? $weights['math'] : $baseWeights['math'];
             $totalScore += $mathWeight * $mathScore;
+            $totalWeight += $mathWeight;
         
             $ukrainianWeight = isset($weights['ukrainian']) ? $weights['ukrainian'] : $baseWeights['ukrainian'];
             $totalScore += $ukrainianWeight * $ukrainianScore;
+            $totalWeight += $ukrainianWeight;
         
             $subjectWeight = isset($weights[$subject]) ? $weights[$subject] : $baseWeights[$subject];
-            $totalScore += $score * $subjectWeight;
+            $totalWeight += $subjectWeight;
+            $totalScore += ($score * $subjectWeight);
+            $totalScore /= $totalWeight;
+            
+            
         
             if ($totalScore > 200) {
                 $totalScore = 200;
             }
             if ($totalScore > $passingScore) {
-                $passedBudget[] = $specialty;
-                $passedContract[] = $specialty;
+                $passedBudget[] = $specialty .'     конкурсний бал = '. round($totalScore, 1) ;
+                $passedContract[] = $specialty . $spaces .'     конкурсний бал = '. round($totalScore, 1);
             } 
             else {
-                $passedContract[] = $specialty;
+                $passedContract[] = $specialty . $spaces .'     конкурсний бал = '. round($totalScore, 1);
             }
             
         }
@@ -298,7 +315,7 @@ function zno_calculator_shortcode_form() {
     }
 
     h5 {
-        font-size: 0.5rem;
+        font-size: 1.5rem;
     }
 
     .result li {
@@ -311,10 +328,15 @@ function zno_calculator_shortcode_form() {
     gap: 10px;
 }
 
+.colored-text {
+      color: #0D0D0E; 
+      font-size: 1.5rem;
+    }
+
 .result_list li {
     border: 1px solid black;
     border-radius: 8px;
-    flex-basis: 1700px;
+    flex-basis: 17000px;
     padding: 6px;
     display: flex;
     justify-content: center;
@@ -327,6 +349,7 @@ function zno_calculator_shortcode_form() {
             $('#zno-calculator-form').submit(function(e) {
                 e.preventDefault();
 
+                $url = 'http://vstup2022.edbo.gov.ua/';
                 var math = $('#math').val();
                 var ukrainian = $('#ukrainian').val();
                 var subject = $('#subject').val();
@@ -344,7 +367,7 @@ function zno_calculator_shortcode_form() {
                     },
                     success: function(response) {
                         if (response.valid) {
-                            var resultHtml =  '<h2>За результатами обчислень:<h5>(*на основі даних встпної компанії 2022 року)</h5></h2>';
+                            var resultHtml =  '<h2>За результатами обчислень:</h2><h5>(*на основі даних 2022 року вступу)</h5>';
                             resultHtml += '<h3>Ви можете претендувати на бюджетне місце:</h3>';
 
 
@@ -367,10 +390,12 @@ function zno_calculator_shortcode_form() {
                                 $.each(response.passedContract, function(index, value) {
                                     resultHtml += '<li>' + value + '</li>';
                                 });
-                                resultHtml += '</ul>';
+                                resultHtml += '</ul> <h5><a href="http://vstup2022.edbo.gov.ua/" target="_blank"><p class="colored-text">*Інформацію взято з ЄДБО</p></a></h5>';
+                                resultHtml += '<h5>**у випадку встановлення пріоритетів 1 чи 2 на спеціальності з Переліку спеціальностей яким надається особлива підтримка, тоді конкурсний бал множиться на коефіцієнт 1,02</h5>'
                             } else {
                                 resultHtml += '<p>Немає спеціальностей на контракті.</p>';
                             }
+                            
                             $('#zno-calculator-result').html(resultHtml);
                         } else {
                             $('#zno-calculator-result').html('<p class="error">' + response.error + '</p>');
@@ -384,4 +409,3 @@ function zno_calculator_shortcode_form() {
     return ob_get_clean();
 }
 add_shortcode('zno_calculator_form', 'zno_calculator_shortcode_form');
-
